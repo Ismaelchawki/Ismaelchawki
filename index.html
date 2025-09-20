@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>لعبة XO</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    table { margin: auto; border-collapse: collapse; }
+    td {
+      width: 100px; height: 100px;
+      border: 2px solid black; font-size: 48px;
+      cursor: pointer; text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 لعبة XO</h1>
+  <table id="board">
+    <tr><td onclick="play(this,0,0)"></td><td onclick="play(this,0,1)"></td><td onclick="play(this,0,2)"></td></tr>
+    <tr><td onclick="play(this,1,0)"></td><td onclick="play(this,1,1)"></td><td onclick="play(this,1,2)"></td></tr>
+    <tr><td onclick="play(this,2,0)"></td><td onclick="play(this,2,1)"></td><td onclick="play(this,2,2)"></td></tr>
+  </table>
+  <h2 id="status">دور: X</h2>
+  <button onclick="resetGame()">🔄 إعادة اللعب</button>
+  <button onclick="getBalance()">💰 عرض رصيدي</button>
+
+  <script>
+    const API_URL = "https://your-api-url.com"; // ← غيّرها برابط السيرفر
+    const userId = "123456789"; // ← خليه يجي من تليجرام initData لما تربطه بالبوت
+    let turn = "X";
+    let board = [["","",""],["","",""],["","",""]];
+
+    function play(cell, row, col) {
+      if (cell.innerHTML === "" && !checkWinner()) {
+        cell.innerHTML = turn;
+        board[row][col] = turn;
+        if (checkWinner()) {
+          document.getElementById("status").innerText = "🏆 اللاعب " + turn + " فاز!";
+          if (turn === "X") {
+            addCoins(50); // الفائز ياخد 50 عملة
+          }
+        } else {
+          turn = (turn === "X") ? "O" : "X";
+          document.getElementById("status").innerText = "دور: " + turn;
+        }
+      }
+    }
+
+    function checkWinner() {
+      // كل الصفوف والأعمدة
+      for (let i=0;i<3;i++) {
+        if (board[i][0] && board[i][0]===board[i][1] && board[i][1]===board[i][2]) return true;
+        if (board[0][i] && board[0][i]===board[1][i] && board[1][i]===board[2][i]) return true;
+      }
+      // القطرين
+      if (board[0][0] && board[0][0]===board[1][1] && board[1][1]===board[2][2]) return true;
+      if (board[0][2] && board[0][2]===board[1][1] && board[1][1]===board[2][0]) return true;
+      return false;
+    }
+
+    function resetGame() {
+      board = [["","",""],["","",""],["","",""]];
+      turn = "X";
+      document.getElementById("status").innerText = "دور: " + turn;
+      let cells = document.querySelectorAll("td");
+      cells.forEach(c => c.innerHTML = "");
+    }
+
+    async function addCoins(amount) {
+      await fetch(`${API_URL}/add_coins`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({user_id: userId, coins: amount})
+      });
+    }
+
+    async function getBalance() {
+      let res = await fetch(`${API_URL}/balance/${userId}`);
+      let data = await res.json();
+      alert("رصيدك الحالي: " + data.balance + " 💎");
+    }
+  </script>
+</body>
+</html>
